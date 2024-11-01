@@ -60,22 +60,19 @@
     <div id="results"></div>
   </div>
 
-<!-- Page 3: Wishlist -->
-<div id="wishlist-page" style="display: none;">
-  <h2>Your Wishlist</h2>
-  <div>
-    <button onclick="showFileInput()" class="secondary-btn">&#128196; Read</button>
-  </div>
-  
-    <!-- File Input field and Enter button to read wishlist file -->
-    <input type="text" id="file-input" style="display:none; margin-top: 10px;" placeholder="Enter file name" onkeydown="handleFileRead(event)">
+  <!-- Wishlist Page and Read Section -->
+  <div id="wishlist-page" style="display: none;">
+    <h2>Your Wishlist</h2>
+    <div>
+      <button onclick="showFileInput()" class="secondary-btn">&#128196; Read</button>
+    </div>
+        <input type="text" id="file-input" style="display:none; margin-top: 10px;" placeholder="Enter file name" onkeydown="handleFileRead(event)">
     <button id="file-submit" style="display:none; margin-top: 10px;" onclick="fetchWishlistData()">Enter</button>
-
-    <!-- Wishlist items display area -->
     <div id="wishlist" style="margin-top: 20px;"></div>
-</div>
+  </div>
 
   <script>
+    const { ipcRenderer } = require('electron');
     let wishlist = [];
 
     function showPage(pageId) {
@@ -141,24 +138,13 @@
 }
 
 
-    const { ipcRenderer } = require('electron');
-
     function addToWishlist(name, brand, price, productType) {
   const item = { name, brand, price, productType };
-
-  // Add item to wishlist array
   wishlist.push(item);
-  
-  // Display the updated wishlist immediately
   displayWishlist();
-
-  // Show popup message to confirm addition
   showPopup('Wishlist item added successfully.');
-
-  // Save the item to the Files directory using ipcRenderer if required
   ipcRenderer.send('save-wishlist-item', item);
 
-  // Listen for the save success/error responses
   ipcRenderer.once('save-success', (event, message) => {
     showPopup(message);
   });
@@ -198,58 +184,166 @@ function displayWishlist() {
   }
 }
 
-// Function to display file input and submit button
 // Function to show the file input and submit button when "Read" is clicked
 function showFileInput() {
-  document.getElementById("file-input").style.display = "block";
-  document.getElementById("file-submit").style.display = "inline-block";
-  document.getElementById("file-input").value = ''; // Clear previous input
-  document.getElementById("wishlist").innerHTML = ''; // Clear previous content
-}
+      document.getElementById("file-input").style.display = "block";
+      document.getElementById("file-submit").style.display = "inline-block";
+      document.getElementById("file-input").value = ''; // Clear previous input
+      document.getElementById("wishlist").innerHTML = ''; // Clear previous content
+    }
 
-// Trigger file read on Enter key press
-function handleFileRead(event) {
-  if (event.key === "Enter") {
-    fetchWishlistData();
+    // New function to read the file and display its contents
+
+
+    function fetchWishlistData() {
+      const fileName = document.getElementById("file-input").value.trim();
+      if (fileName) {
+        ipcRenderer.send('read-wishlist-file', fileName);
+      } else {
+        alert("Please enter a file name.");
+      }
+    }
+
+    ipcRenderer.on('file-read-success', (event, data) => {
+      const wishlistDiv = document.getElementById("wishlist");
+      wishlistDiv.innerHTML = "";
+
+      const lines = data.split('\n');
+      const wishlistItem = {};
+      lines.forEach(line => {
+        const [key, value] = line.split(': ');
+        wishlistItem[key] = value;
+      });
+
+      wishlistDiv.innerHTML = `
+        <div style="background-color: #D9D9D9; padding: 15px; border-radius: 10px; margin-top: 10px;">
+          <h3>${wishlistItem.Name}</h3>
+          <p>Brand: ${wishlistItem.Brand}</p>
+          <p>Price: ${wishlistItem.Price}</p>
+          <p>Note: ${wishlistItem.Note || "No notes added."}</p>
+          <button onclick="deleteWishlistItem('${wishlistItem.Name}')" class="wishlist-button">Delete</button>
+          <button onclick="updateWishlistItem('${wishlistItem.Name}')" class="wishlist-button">Update</button>
+        </div>
+      `;
+    });
+
+    ipcRenderer.on('file-read-error', (event, errorMessage) => {
+      alert(errorMessage);
+    });
+
+
+  function readWishlistFile(fileName) {
+    ipcRenderer.send('read-wishlist-file', fileName); // Request file read
   }
-}
+
+  // Display the wishlist items with delete and update buttons after reading from file
+  ipcRenderer.on('file-read-success', (event, data) => {
+    const wishlistDiv = document.getElementById("wishlist");
+    wishlistDiv.innerHTML = ""; // Clear previous content
+
+    const lines = data.split('\n');
+    const wishlistItem = {};
+    lines.forEach(line => {
+      const [key, value] = line.split(': ');
+      wishlistItem[key] = value;
+    });
+
+    wishlistDiv.innerHTML = `
+      <div style="background-color: #D9D9D9; padding: 15px; border-radius: 10px; margin-top: 10px;">
+        <h3>${wishlistItem.Name}</h3>
+        <p>Brand: ${wishlistItem.Brand}</p>
+        <p>Price: ${wishlistItem.Price}</p>
+        <p>Note: <span id="note-display">${wishlistItem.Note || "No notes added."}</span></p>
+        <input type="text" id="note-input" placeholder="Enter your note here" value="${wishlistItem.Note || ""}" style="display: none; margin-top: 10px;">
+        <button onclick="editNote()" style="background-color: #6b9b98; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer;" class="wishlist-button">Edit Note</button>
+        <button onclick="saveUpdatedNote('${wishlistItem.Name}')" id="save-note-btn" style="display: none; background-color: #4CAF50; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer;" class="wishlist-button">Save Note</button>
+        <button onclick="deleteItem('${wishlistItem.Name}')" style="background-color: #c07892; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer;" class="wishlist-button">Delete</button>
+        </div>
+    `;
+  });
+
+  ipcRenderer.on('file-read-error', (event, errorMessage) => {
+    alert(errorMessage);
+  });
+  // Function to trigger reading the file when user presses Enter or clicks a button
+  function handleFileRead(event) {
+      if (event.key === "Enter") {
+        fetchWishlistData();
+      }
+    }
+
+  // Listen for successful file read and display content
+  ipcRenderer.on('file-read-success', (event, data) => {
+    const wishlistDiv = document.getElementById("wishlist");
+    wishlistDiv.innerHTML = ""; // Clear previous content
+
+    const lines = data.split('\n');
+    const wishlistItem = {};
+    lines.forEach(line => {
+      const [key, value] = line.split(': ');
+      wishlistItem[key] = value;
+    });
+
+    wishlistDiv.innerHTML = `
+      <div>
+        <h3>${wishlistItem.Name}</h3>
+        <p>Brand: ${wishlistItem.Brand}</p>
+        <p>Price: RM${wishlistItem.Price}</p>
+        <p>Type: ${wishlistItem.Type}</p>
+        <p>Note: ${wishlistItem.Note || "No notes added."}</p>
+      </div>
+    `;
+  });
+
+  // Handle any read errors
+  ipcRenderer.on('file-read-error', (event, errorMessage) => {
+    showPopup(errorMessage);
+  });
 
 // Function to read and display wishlist file content
+
 function fetchWishlistData() {
-  const fileName = document.getElementById("file-input").value.trim();
-  if (fileName) {
-    const filePath = `Files/${fileName.replace(/\s+/g, '_')}.txt`; // Construct file path
-    ipcRenderer.send('read-wishlist-file', filePath); // Send read request to main process
-  } else {
-    showPopup("Please enter a file name.");
-  }
-}
+      const fileName = document.getElementById("file-input").value.trim();
+      if (fileName) {
+        readWishlistFile(fileName);
+      } else {
+        alert("Please enter a file name.");
+      }
+    }
 
-// Listen for successful file read and display content
-ipcRenderer.on('file-read-success', (event, data) => {
-  const wishlistDiv = document.getElementById("wishlist");
-  wishlistDiv.innerHTML = ""; // Clear previous content
+    function readWishlistFile(fileName) {
+      ipcRenderer.send('read-wishlist-file', fileName); // Request file read
+    }
 
-  // Parse data from file
-  const [name, brand, price, type, note] = data.split('\n').map(line => line.split(': ')[1] || '');
+    ipcRenderer.on('file-read-success', (event, data) => {
+      const wishlistDiv = document.getElementById("wishlist");
+      wishlistDiv.innerHTML = ""; // Clear previous content
 
-  // Display item details with Delete and Update buttons
-  wishlistDiv.innerHTML = `
-    <div>
-      <h3>${name}</h3>
-      <p>Brand: ${brand}</p>
-      <p>Price: RM${price}</p>
-      <p>Note: ${note || "No notes added."}</p>
-      <button onclick="removeFromWishlistByName('${name}')">Delete</button>
-      <button onclick="showEditFieldForFile('${name}', '${note || ''}')">Update</button>
-    </div>
-  `;
-});
+      // Parse data from file and display it
+      const lines = data.split('\n');
+      const wishlistItem = {};
+      lines.forEach(line => {
+        const [key, value] = line.split(': ');
+        wishlistItem[key] = value;
+      });
 
-// Handle any read errors
-ipcRenderer.on('file-read-error', (event, errorMessage) => {
-  showPopup(errorMessage);
-});
+      // Display the parsed wishlist item with delete and update buttons
+      wishlistDiv.innerHTML = `
+        <div>
+          <h3>${wishlistItem.Name}</h3>
+          <p>Brand: ${wishlistItem.Brand}</p>
+          <p>Price: ${wishlistItem.Price}</p> <!-- Ensure RM is not duplicated -->
+          <p>Type: ${wishlistItem.Type}</p>
+          <p>Note: ${wishlistItem.Note || "No notes added."}</p>
+          <button onclick="deleteItem('${wishlistItem.Name}')" class="wishlist-button">Delete</button>
+          <button onclick="updateItem('${wishlistItem.Name}')" class="wishlist-button">Update</button>
+        </div>
+      `;
+    });
+
+    ipcRenderer.on('file-read-error', (event, errorMessage) => {
+      alert(errorMessage);
+    });
 
 
 // Function to show the editable input field and save button
@@ -263,17 +357,12 @@ function showEditField(index) {
 function saveNote(index) {
   const item = wishlist[index];
   const newNote = document.getElementById(`edit-note-${index}`).value;
-
-  // Update the note in the local array
   item.note = newNote;
-
   // Update the display
   displayWishlist(); // Refresh the wishlist display to show the updated note
-
   // Send the updated note to the backend if needed
   ipcRenderer.send('update-wishlist-item', item);
 
-  // Listen for the update confirmation from the backend
   ipcRenderer.once('update-success', (event, message) => {
     showPopup(message);
   });
@@ -320,6 +409,58 @@ function updateWishlistItem(index, note) {
   });
 }
 
+function deleteItem(itemName) {
+      ipcRenderer.send('delete-wishlist-item', itemName);
+
+      ipcRenderer.once('delete-success', () => {
+        alert('Wishlist item deleted successfully.');
+        document.getElementById("wishlist").innerHTML = "";
+      });
+
+      ipcRenderer.once('delete-error', (event, errorMessage) => {
+        alert(errorMessage);
+      });
+    }
+
+  // Function to update an item after reading it
+  function updateItem(itemName) {
+  const wishlistDiv = document.getElementById("wishlist");
+
+  // Clear previous content and add an editable note field
+  wishlistDiv.innerHTML = `
+    <div style="background-color: #D9D9D9; padding: 15px; border-radius: 10px; margin-top: 10px;">
+      <h3>${wishlistItem.Name}</h3>
+      <p>Brand: ${wishlistItem.Brand}</p>
+      <p>Price: ${wishlistItem.Price}</p>
+      <p>Note: <span id="note-display">${wishlistItem.Note || "No notes added."}</span></p>
+      <input type="text" id="note-input" placeholder="Enter your note here" value="${wishlistItem.Note || ""}" style="display: none;">
+      <button onclick="editNote()" class="wishlist-button">Edit Note</button>
+      <button onclick="saveUpdatedNote('${itemName}')" id="save-note-btn" style="display: none;" class="wishlist-button">Save Note</button>
+      <button onclick="deleteItem('${itemName}')" class="wishlist-button">Delete</button>
+    </div>
+  `;
+
+  function editNote() {
+    document.getElementById("note-display").style.display = "none";
+    document.getElementById("note-input").style.display = "block";
+    document.getElementById("save-note-btn").style.display = "inline";
+  }
+
+  function saveUpdatedNote(itemName) {
+    const updatedNote = document.getElementById("note-input").value;
+
+    ipcRenderer.send('update-wishlist-item', { name: itemName, note: updatedNote });
+
+    ipcRenderer.once('update-success', () => {
+      alert('Wishlist item updated successfully.');
+      readWishlistFile(); // Reload the updated wishlist item
+    });
+
+    ipcRenderer.once('update-error', (event, errorMessage) => {
+      alert(errorMessage); // Show error if update fails
+    });
+  }
+}
 
   </script>
 </body>

@@ -103,7 +103,7 @@ header button:hover {
 #results div, #wishlist div {
   padding: 10px;
   margin: 10px 0;
-  background-color: #D9D9D9;
+  background-color: #c1f8d6;
   border-radius: 10px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
 }
@@ -174,7 +174,7 @@ header button:hover {
 }
 
 .secondary-btn {
-  background-color: #A4C3B2;
+  background-color: #4da374;
   color: #364723;
   padding: 10px 20px;
   border: none;
