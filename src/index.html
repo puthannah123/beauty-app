@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beauty Finder</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Header with Navigation Links -->
+  <header>
+    <button onclick="showPage('homepage')">Home</button>
+    <button onclick="showPage('recommendations-page')">Products</button>
+    <button onclick="showPage('wishlist-page')">Your Wishlist</button>
+  </header>
+
+  <!-- Popup Message -->
+  <div id="popup-message">
+    <p id="popup-text"></p>
+    <button onclick="closePopup()">Close</button>
+  </div>
+
+<!-- Homepage Content with Banner -->
+<div id="homepage" style="display: block;">
+  <!-- Homepage Banner -->
+  <div id="homepage-banner">
+    <div class="banner-img">
+      <img src="banner.jpg" alt="Beauty Banner">
+    </div>
+    <div class="banner-text">
+      <h1>Welcome to Beauty Finder</h1>
+      <p>Find the perfect products crafted just for you!</p>
+      <button onclick="showPage('recommendations-page')" class="primary-btn">Discover Now</button>
+    </div>
+  </div>
+    <!-- Homepage Introduction -->
+    <h2>Discover the Glow That’s Uniquely Yours.</h2>
+    <p style="text-align: center; color: #555;">Handpicked beauty essentials tailored to your style and skin type.</p>
+    <p style="text-align: center; color: #555;">Explore products that bring out your best glow every day.</p>
+</div>
+</div>
+
+
+  <!-- Page 2: Recommendations (Search Form) -->
+  <div id="recommendations-page" style="display: none;">
+    <h2>Find Your Favorite Beauty Products</h2>
+    <div id="search-form">
+      <label for="product-type">Product Type:</label>
+      <input type="text" id="product-type" placeholder="Enter product type">
+      
+      <label for="brand">Favorite Brand:</label>
+      <input type="text" id="brand" placeholder="Enter brand name">
+      
+      <label for="price">Max Price (RM):</label>
+      <input type="number" id="price" placeholder="Enter max price">
+      
+      <button id="search-button" onclick="searchProducts()">Search</button>
+    </div>
+    <div id="results"></div>
+  </div>
+
+<!-- Page 3: Wishlist -->
+<div id="wishlist-page" style="display: none;">
+  <h2>Your Wishlist</h2>
+  <div>
+    <button onclick="showFileInput()" class="secondary-btn">&#128196; Read</button>
+  </div>
+  
+    <!-- File Input field and Enter button to read wishlist file -->
+    <input type="text" id="file-input" style="display:none; margin-top: 10px;" placeholder="Enter file name" onkeydown="handleFileRead(event)">
+    <button id="file-submit" style="display:none; margin-top: 10px;" onclick="fetchWishlistData()">Enter</button>
+
+    <!-- Wishlist items display area -->
+    <div id="wishlist" style="margin-top: 20px;"></div>
+</div>
+
+  <script>
+    let wishlist = [];
+
+    function showPage(pageId) {
+      document.getElementById("homepage").style.display = "none";
+      document.getElementById("recommendations-page").style.display = "none";
+      document.getElementById("wishlist-page").style.display = "none";
+      document.getElementById(pageId).style.display = "block";
+
+      if (pageId === "wishlist-page") {
+        displayWishlist();
+      }
+    }
+
+    function showPopup(message) {
+      const popup = document.getElementById("popup-message");
+      const popupText = document.getElementById("popup-text");
+      popupText.innerText = message;
+      popup.style.display = "block";
+    }
+
+    function closePopup() {
+      const popup = document.getElementById("popup-message");
+      popup.style.display = "none";
+    }
+
+    async function searchProducts() {
+  const productType = document.getElementById("product-type").value;
+  const brand = document.getElementById("brand").value;
+  const maxPrice = document.getElementById("price").value;
+
+  try {
+    const response = await fetch(`https://makeup-api.herokuapp.com/api/v1/products.json?brand=${brand}&product_type=${productType}`);
+    const products = await response.json();
+
+    const filteredProducts = products.filter(product => parseFloat(product.price) * 4.18 <= maxPrice);
+    const resultsDiv = document.getElementById("results");
+    resultsDiv.innerHTML = "";
+
+    if (filteredProducts.length > 0) {
+      filteredProducts.forEach(product => {
+        const productPriceRM = (parseFloat(product.price) * 4.18).toFixed(2);
+        const productElement = document.createElement("div");
+        productElement.innerHTML = `
+          <h3>${product.name}</h3>
+          <p>Brand: ${product.brand}</p>
+          <p>Price: RM${productPriceRM}</p>
+          <img src="${product.image_link}" alt="${product.name}">
+          <p>Description: ${product.description}</p>
+          <p>Rating: ${product.rating || "N/A"}</p>
+          <p>Product Type: ${product.product_type}</p>
+          <p><a href="${product.product_link}" target="_blank">Product Link</a></p>
+          <p><a href="https://www.${product.brand}.com" target="_blank">Website Link</a></p>
+          <button class="wishlist-button" onclick="addToWishlist('${product.name}', '${product.brand}', '${productPriceRM}', '${product.product_type}')">Add to Wishlist</button>
+        `;
+        resultsDiv.appendChild(productElement);
+      });
+    } else {
+      resultsDiv.innerHTML = "<p>No products found within your criteria.</p>";
+    }
+  } catch (error) {
+    showPopup("Error fetching data. Please try again.");
+  }
+}
+
+
+    const { ipcRenderer } = require('electron');
+
+    function addToWishlist(name, brand, price, productType) {
+  const item = { name, brand, price, productType };
+
+  // Add item to wishlist array
+  wishlist.push(item);
+  
+  // Display the updated wishlist immediately
+  displayWishlist();
+
+  // Show popup message to confirm addition
+  showPopup('Wishlist item added successfully.');
+
+  // Save the item to the Files directory using ipcRenderer if required
+  ipcRenderer.send('save-wishlist-item', item);
+
+  // Listen for the save success/error responses
+  ipcRenderer.once('save-success', (event, message) => {
+    showPopup(message);
+  });
+  ipcRenderer.once('save-error', (event, errorMessage) => {
+    showPopup(errorMessage);
+  });
+}
+
+
+function displayWishlist() {
+  const wishlistDiv = document.getElementById("wishlist");
+  wishlistDiv.innerHTML = "";
+  if (wishlist.length > 0) {
+    wishlist.forEach((item, index) => {
+      const itemDiv = document.createElement("div");
+      itemDiv.innerHTML = `
+        <h3>${item.name}</h3>
+        <p>Brand: ${item.brand}</p>
+        <p>Price: RM${item.price}</p>
+        <p>Note: <span id="note-${index}">${item.note || "No notes added."}</span></p>
+        
+        <!-- Hidden input field for editing the note -->
+        <input type="text" id="edit-note-${index}" style="display:none;" placeholder="Enter your note here" value="${item.note || ""}">
+        
+        <!-- Buttons for delete, update and save actions -->
+        <button onclick="removeFromWishlist(${index})" style="background-color: #c07892; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer;">Delete</button>
+        <button onclick="showEditField(${index})" style="background-color: #6b9b98; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; margin-left: 5px;">Update</button>
+        <button onclick="saveNote(${index})" style="background-color: #4CAF50; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; margin-left: 5px; display:none;" id="save-button-${index}">Save</button>
+
+        <!-- Container to display file content -->
+        <div id="file-content-${index}" style="margin-top: 10px;"></div>
+      `;
+      wishlistDiv.appendChild(itemDiv);
+    });
+  } else {
+    wishlistDiv.innerHTML = "<p>Your wishlist is empty.</p>";
+  }
+}
+
+// Function to display file input and submit button
+// Function to show the file input and submit button when "Read" is clicked
+function showFileInput() {
+  document.getElementById("file-input").style.display = "block";
+  document.getElementById("file-submit").style.display = "inline-block";
+  document.getElementById("file-input").value = ''; // Clear previous input
+  document.getElementById("wishlist").innerHTML = ''; // Clear previous content
+}
+
+// Trigger file read on Enter key press
+function handleFileRead(event) {
+  if (event.key === "Enter") {
+    fetchWishlistData();
+  }
+}
+
+// Function to read and display wishlist file content
+function fetchWishlistData() {
+  const fileName = document.getElementById("file-input").value.trim();
+  if (fileName) {
+    const filePath = `Files/${fileName.replace(/\s+/g, '_')}.txt`; // Construct file path
+    ipcRenderer.send('read-wishlist-file', filePath); // Send read request to main process
+  } else {
+    showPopup("Please enter a file name.");
+  }
+}
+
+// Listen for successful file read and display content
+ipcRenderer.on('file-read-success', (event, data) => {
+  const wishlistDiv = document.getElementById("wishlist");
+  wishlistDiv.innerHTML = ""; // Clear previous content
+
+  // Parse data from file
+  const [name, brand, price, type, note] = data.split('\n').map(line => line.split(': ')[1] || '');
+
+  // Display item details with Delete and Update buttons
+  wishlistDiv.innerHTML = `
+    <div>
+      <h3>${name}</h3>
+      <p>Brand: ${brand}</p>
+      <p>Price: RM${price}</p>
+      <p>Note: ${note || "No notes added."}</p>
+      <button onclick="removeFromWishlistByName('${name}')">Delete</button>
+      <button onclick="showEditFieldForFile('${name}', '${note || ''}')">Update</button>
+    </div>
+  `;
+});
+
+// Handle any read errors
+ipcRenderer.on('file-read-error', (event, errorMessage) => {
+  showPopup(errorMessage);
+});
+
+
+// Function to show the editable input field and save button
+function showEditField(index) {
+  document.getElementById(`edit-note-${index}`).style.display = "block";
+  document.getElementById(`save-button-${index}`).style.display = "inline";
+  document.getElementById(`note-${index}`).style.display = "none";
+}
+
+// Function to save the updated note
+function saveNote(index) {
+  const item = wishlist[index];
+  const newNote = document.getElementById(`edit-note-${index}`).value;
+
+  // Update the note in the local array
+  item.note = newNote;
+
+  // Update the display
+  displayWishlist(); // Refresh the wishlist display to show the updated note
+
+  // Send the updated note to the backend if needed
+  ipcRenderer.send('update-wishlist-item', item);
+
+  // Listen for the update confirmation from the backend
+  ipcRenderer.once('update-success', (event, message) => {
+    showPopup(message);
+  });
+  ipcRenderer.once('update-error', (event, errorMessage) => {
+    showPopup(errorMessage);
+  });
+}
+
+
+function showUpdateForm(index) {
+  alert("Update button clicked for index: " + index); // Debugging Alert
+  const item = wishlist[index];
+  const note = prompt(`Add or update the note for ${item.name}:`, item.note || "");
+  if (note !== null) {
+    updateWishlistItem(index, note);
+  }
+}
+
+
+function updateWishlistItem(index, note) {
+  const item = wishlist[index];
+  item.note = note; // Update the note in the wishlist array
+
+  alert("Note updated for " + item.name + ": " + note); // Debugging Alert
+
+  displayWishlist(); // Refresh the wishlist display immediately
+}
+
+
+    function removeFromWishlist(index) {
+  const item = wishlist[index]; // Get the item to be deleted from the array
+  wishlist.splice(index, 1); // Remove item from the local wishlist array
+  displayWishlist(); // Refresh the wishlist display immediately
+
+  // Send message to delete the file from the Files directory using the item name
+  ipcRenderer.send('delete-wishlist-item', item.name);
+
+  // Show a popup to confirm deletion
+  ipcRenderer.once('delete-success', (event, message) => {
+    showPopup(message);
+  });
+  ipcRenderer.once('delete-error', (event, errorMessage) => {
+    showPopup(errorMessage);
+  });
+}
+
+
+  </script>
+</body>
+</html>
+

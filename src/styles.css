@@ -1,0 +1,212 @@
+/* General Styles */
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #effff2; /* light background */
+  color: #283618; /* dark green for main text */
+  margin: 0;
+  padding: 0;
+}
+
+/* Header Styles */
+header {
+  background-color: #364723; /* exclusive green */
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+header button {
+  background-color: transparent; /* Remove background */
+  border: none; /* Remove border */
+  color: #daf3bd; /* Text color */
+  padding: 8px 18px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.3s ease; /* Smooth transition for color change on hover */
+}
+
+header button:hover {
+  color: #71a789; /* Change text color on hover */
+}
+
+/* Homepage Banner Styling */
+#homepage-banner {
+  display: flex;
+  align-items: stretch; /* Makes both sides equal height */
+  height: 300px; /* Set desired height */
+  border-radius: 10px;
+  overflow: hidden; /* Ensures no overflow beyond the banner */
+}
+
+.banner-img {
+  flex: 1; /* Takes up the left side */
+  height: 100%;
+}
+
+.banner-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensures the image fully covers the container without stretching */
+}
+
+.banner-text {
+  flex: 1; /* Takes up the right side */
+  padding: 20px;
+  background-color: #c5daae; /* Background color only on the text side */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Recommendation Form Styling */
+#search-form {
+  max-width: 500px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #78ad67; /* light green background */
+  border-radius: 15px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+#search-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #1e2911; /* exclusive green for label text */
+}
+
+#search-form input {
+  width: 95%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 2px solid #A4C3B2; /* border color */
+  border-radius: 10px;
+}
+
+#search-form button {
+  background-color: #364723; /* button background */
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  width: 100%;
+  font-size: 16px;
+}
+
+#search-form button:hover {
+  background-color: #283618; /* dark green on hover */
+}
+
+/* Wishlist and Results Styling */
+#results div, #wishlist div {
+  padding: 10px;
+  margin: 10px 0;
+  background-color: #D9D9D9;
+  border-radius: 10px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
+}
+
+#results img {
+  display: block;
+  margin: 5px 0;
+  border-radius: 10px;
+  width: 100px;
+  height: 100px;
+}
+
+/* Styled Add to Wishlist Button */
+.wishlist-button {
+  background-color: #364723;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 10px;
+  transition: background-color 0.3s;
+}
+
+.wishlist-button:hover {
+  background-color: #283618;
+}
+
+/* Popup message styles */
+#popup-message {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #A4C3B2;
+  color: #364723;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+#popup-message button {
+  background-color: #364723;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Button Styles */
+.primary-btn {
+  background-color: #748C66;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.primary-btn:hover {
+  background-color: #364723;
+}
+
+.secondary-btn {
+  background-color: #A4C3B2;
+  color: #364723;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.secondary-btn:hover {
+  background-color: #D9E6D5;
+}
+
+/* Input Bar Styles */
+.input-bar {
+  padding: 12px;
+  border: 2px solid #748C66;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 15px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.input-bar:focus {
+  border-color: #364723;
+}
+
+/* Page Layout */
+.page {
+  padding: 40px;
+  max-width: 1200px;
+  margin: auto;
+}
+
