@@ -1,3 +1,18 @@
+function addToWishlist(name, brand, price, productType) {
+    const item = { name, brand, price, productType };
+    wishlist.push(item);
+    displayWishlist();
+    showPopup('Wishlist item added successfully.');
+    ipcRenderer.send('save-wishlist-item', item);
+
+    ipcRenderer.once('save-success', (event, message) => {
+        showPopup(message);
+    });
+    ipcRenderer.once('save-error', (event, errorMessage) => {
+        showPopup(errorMessage);
+    });
+}
+
 // Toggle between pages
 function showPage(pageId) {
     const pages = ['homepage', 'recommendations-page', 'wishlist-page'];
@@ -21,16 +36,24 @@ function showPage(pageId) {
   
         if (filteredProducts.length > 0) {
             filteredProducts.forEach(product => {
-                const productPriceRM = (parseFloat(product.price) * 4.18).toFixed(2); // Convert to RM
+                const productPriceRM = (parseFloat(product.price) * 4.18).toFixed(2);
                 const productElement = document.createElement("div");
                 productElement.classList.add('product');
+                
+                // Escape special characters in the strings
+                const escapedName = product.name.replace(/'/g, "\\'");
+                const escapedBrand = product.brand.replace(/'/g, "\\'");
+                const escapedType = product.product_type.replace(/'/g, "\\'");
+                
                 productElement.innerHTML = `
-                    <img src="${product.image_link}" alt="${product.name}">
+                    <img src="${product.image_link}" alt="${escapedName}">
                     <div>
                         <h3>${product.name}</h3>
                         <p>Brand: ${product.brand}</p>
                         <p>Price: RM${productPriceRM}</p>
-                        <button onclick="addToWishlist('${product.name}', '${product.brand}', '${productPriceRM}')">Add to Wishlist</button>
+                        <button onclick="addToWishlist('${escapedName}', '${escapedBrand}', '${productPriceRM}', '${escapedType}')">
+                            Add to Wishlist
+                        </button>
                     </div>
                 `;
                 resultsDiv.appendChild(productElement);

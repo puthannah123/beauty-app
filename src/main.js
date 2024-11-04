@@ -60,7 +60,11 @@ ipcMain.on('delete-wishlist-item', (event, fileName) => {
 ipcMain.on('update-wishlist-item', (event, item) => {
   const fileName = `${item.name.replace(/\s+/g, '_')}.txt`;
   const filePath = path.join(filesDir, fileName);
-  const data = `Name: ${item.name}\nBrand: ${item.brand || "Unknown"}\nPrice: RM${item.price || "0.00"}\nType: ${item.productType || "N/A"}\nNote: ${item.note || "No notes added."}`;
+  
+  // Remove any existing 'RM' prefix before adding it
+  const cleanPrice = item.price.replace(/^RM/, '').replace(/^RM/, '');
+  
+  const data = `Name: ${item.name}\nBrand: ${item.brand || "Unknown"}\nPrice: RM${cleanPrice}\nType: ${item.productType || "N/A"}\nNote: ${item.note || "No notes added."}`;
 
   fs.writeFile(filePath, data, (err) => {
     if (err) {
